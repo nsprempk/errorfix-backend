@@ -57,6 +57,10 @@ export const createQuote = async (req, res) => {
       });
     }
 
+    /*
+     * IMPORTANT:
+     * Save the enquiry to MongoDB before doing anything with email.
+     */
     const quote = await Quote.create({
       solution,
       companyName,
@@ -72,14 +76,25 @@ export const createQuote = async (req, res) => {
       contactMethod: contactMethod || "Email",
     });
 
-    try {
-      await sendQuoteEmails(quote);
+    /*
+     * Send emails in the background.
+     *
+     * We intentionally DO NOT await this.
+     *
+     * This prevents a slow SMTP server from making the
+     * public Get Quote form wait for 15+ seconds.
+     */
+    sendQuoteEmails(quote)
+      .then(() => {
+        console.log("Quote emails sent successfully.");
+      })
+      .catch((emailError) => {
+        console.error("Quote email failed:", emailError?.message || emailError);
+      });
 
-      console.log("Quote emails sent successfully.");
-    } catch (emailError) {
-      console.error("Quote email failed:", emailError?.message || emailError);
-    }
-
+    /*
+     * Respond immediately after the enquiry has been saved.
+     */
     return res.status(201).json({
       success: true,
       message: "Quote request submitted successfully.",
@@ -221,6 +236,13 @@ export const updateQuoteStatus = async (req, res) => {
   } catch (error) {
     console.error("Update quote status error:", error);
 
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid enquiry status.",
+      });
+    }
+
     return res.status(500).json({
       success: false,
       message: "Unable to update quote status.",
@@ -314,6 +336,13 @@ export const updateQuote = async (req, res) => {
   } catch (error) {
     console.error("Update quote error:", error);
 
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid enquiry information.",
+      });
+    }
+
     return res.status(500).json({
       success: false,
       message: "Unable to update enquiry.",
@@ -403,13 +432,6 @@ export const createQuotation = async (req, res) => {
         message: "Quote not found.",
       });
     }
-
-    /*
-     * We retrieve the actual products from MongoDB.
-     *
-     * This prevents the frontend from changing the product's
-     * stored name/details/price when creating a quotation.
-     */
 
     const quotationProducts = [];
 
@@ -615,11 +637,6 @@ export const updateQuotation = async (req, res) => {
       });
     }
 
-    /*
-     * Reuse the quotation creation logic by rebuilding the quotation
-     * from the supplied product IDs.
-     */
-
     const {
       products,
       discount = 0,
@@ -749,6 +766,13 @@ export const updateQuotation = async (req, res) => {
     });
   } catch (error) {
     console.error("Update quotation error:", error);
+
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid quotation information.",
+      });
+    }
 
     return res.status(500).json({
       success: false,
