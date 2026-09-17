@@ -7,6 +7,10 @@ import {
   updateQuote,
   updateQuoteStatus,
   deleteQuote,
+  createQuotation,
+  getQuotation,
+  updateQuotation,
+  sendQuotation,
 } from "../controllers/quoteController.js";
 
 import authMiddleware from "../middleware/authMiddleware.js";
@@ -15,25 +19,39 @@ const router = express.Router();
 
 /*
 |--------------------------------------------------------------------------
-| Public
+| PUBLIC
 |--------------------------------------------------------------------------
-|
-| Website visitors can submit a quote request.
-|
 */
 
 router.post("/", createQuote);
 
 /*
 |--------------------------------------------------------------------------
-| Protected Admin Routes
+| PROTECTED ADMIN
 |--------------------------------------------------------------------------
-|
-| These routes require a valid admin JWT.
-|
 */
 
 router.get("/", authMiddleware, getQuotes);
+
+/*
+|--------------------------------------------------------------------------
+| QUOTATIONS
+|--------------------------------------------------------------------------
+*/
+
+router.post("/:id/quotation", authMiddleware, createQuotation);
+
+router.get("/:id/quotation", authMiddleware, getQuotation);
+
+router.patch("/:id/quotation", authMiddleware, updateQuotation);
+
+router.post("/:id/quotation/send", authMiddleware, sendQuotation);
+
+/*
+|--------------------------------------------------------------------------
+| INDIVIDUAL ENQUIRY
+|--------------------------------------------------------------------------
+*/
 
 router.get("/:id", authMiddleware, getQuoteById);
 

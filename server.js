@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 
 import authRoutes from "./routes/authRoutes.js";
 import quoteRoutes from "./routes/quoteRoutes.js";
+import productRoutes from "./routes/productRoutes.js";
 
 dotenv.config();
 
@@ -34,6 +35,7 @@ app.use(express.json());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/quotes", quoteRoutes);
+app.use("/api/products", productRoutes);
 
 app.get("/", (req, res) => {
   res.json({
